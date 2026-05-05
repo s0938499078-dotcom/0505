@@ -1,0 +1,57 @@
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import javax.imageio.ImageIO;
+
+public class WatermarkRemoval {
+
+    public static void main(String[] args) {
+        try {
+            // 1. 讀取有浮水印的貓咪圖片 (請確保檔名正確)
+            File input = new File("1.jpg"); 
+            if (!input.exists()) {
+                System.out.println("找不到檔案，請確認圖片路徑。");
+                return;
+            }
+            BufferedImage image = ImageIO.read(input);
+            int width = image.getWidth();
+            int height = height = image.getHeight();
+
+            // 2. 建立純黑白二值化輸出圖
+            BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int rgb = image.getRGB(x, y);
+                    int gray = getGrayScale(rgb);
+
+                    // --- 去浮水印與分割邏輯 ---
+                    // 浮水印文字通常是中高亮度的灰色。
+                    // 我們只抓取「真正深色」的貓咪部分。
+                    
+                    // 調整門檻值：gray < 180 通常能避開大多數淺色浮水印
+                    // 如果浮水印還在，請試著調低這個數字 (例如 150)
+                    if (gray < 180) {
+                        result.setRGB(x, y, Color.BLACK.getRGB()); // 判定為貓咪，塗黑
+                    } else {
+                        result.setRGB(x, y, Color.WHITE.getRGB()); // 判定為背景或浮水印，塗白
+                    }
+                }
+            }
+
+            // 3. 儲存結果
+            File outputFile = new File("no_watermark_cats.png");
+            ImageIO.write(result, "png", outputFile);
+            System.out.println( outputFile.getAbsolutePath());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 灰階轉換公式
+    private static int getGrayScale(int rgb) {
+        Color c = new Color(rgb);
+        return (int) (c.getRed() * 0.299 + c.getGreen() * 0.587 + c.getBlue() * 0.114);
+    }
+}
